@@ -44,11 +44,11 @@ dsh plugin --profile <你的 profile> add github:wangfujian762/dsh-voice-cues-fr
     variant: 'friday'
 ```
 
-可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`friday-dongbei` 东北话，默认 / `friday` 普通话 / `dongbei` 通用东北话 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
+可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`friday-dongbei` 东北话，默认 / `friday` 普话星期五 / `personal-dongbei` 东北话小鲸鱼 / `personal` 小鲸鱼 / `dongbei` 通用东北话 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
 
 ## 换台词 / 换音色
 
-覆盖对应目录下的同名文件即可：东北话版在 `audio/friday-dongbei/`，普通话星期五版在 `audio/friday/`，通用东北话在 `audio/dongbei/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
+覆盖对应目录下的同名文件即可：东北话星期五 `audio/friday-dongbei/`、普通话星期五 `audio/friday/`、东北话小鲸鱼 `audio/personal-dongbei/`、小鲸鱼 `audio/personal/`、通用东北话 `audio/dongbei/`、通用 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
 
 ## 边界
 

@@ -97,6 +97,13 @@ test('an unknown variant falls back to the 东北话 pack', () => {
   assert.match(paths.mp3, /audio[\\/]friday-dongbei[\\/]done\.mp3$/)
 })
 
+test('the 小鲸鱼 packs are reachable too', () => {
+  const mandarin = cuePaths('done', normalizeConfig({ variant: 'personal' }))
+  assert.match(mandarin.mp3, /audio[\\/]personal[\\/]done\.mp3$/)
+  const dongbei = cuePaths('done', normalizeConfig({ variant: 'personal-dongbei' }))
+  assert.match(dongbei.mp3, /audio[\\/]personal-dongbei[\\/]done\.mp3$/)
+})
+
 test('the generic 东北话 set is reachable through variant: dongbei', () => {
   const paths = cuePaths('done', normalizeConfig({ variant: 'dongbei' }))
   assert.match(paths.mp3, /audio[\\/]dongbei[\\/]done\.mp3$/)
