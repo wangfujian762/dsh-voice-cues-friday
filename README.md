@@ -1,6 +1,6 @@
 # dsh-voice-cues-friday
 
-回合结束、请求授权、智能体提问时，各放一段短语音提示。**默认使用东北话版「星期五」语音包**（星期五本轮工作完成啦 / 请给星期五点点授权哦 / 告诉星期五你的选择吧）；同包还带普通话星期五版与通用台词，配置一行即可切换。
+回合结束、请求授权、智能体提问时，各放一段短语音提示。**默认使用东北话版「星期五」语音包**（星期五这轮工作整完了 / 请给星期五授权一下子 / 告诉星期五你要选哪个）；同包还带普通话星期五版、通用东北话与通用台词，配置一行即可切换。
 
 由宿主进程播放——页面关掉、窗口最小化、切到别的 App 都照常响。macOS / Windows / Linux 一个包搞定，不需要装额外播放器。
 
@@ -54,7 +54,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 | `onQuestion` | `true` | 提问提示音 |
 | `turnEndReasons` | `['completed']` | 哪些 `turn/end` 原因会响，可加 `error` / `aborted` / `max-tokens` |
 | `includeSubagents` | `false` | 子代理会话是否也响 |
-| `variant` | `'friday-dongbei'` | `friday-dongbei` 东北话（默认）/ `friday` 普通话 / `default` 通用台词 |
+| `variant` | `'friday-dongbei'` | `friday-dongbei` 东北话（默认）/ `friday` 普通话 / `dongbei` 通用东北话 / `default` 通用台词 |
 | `volume` | `1` | 0–4，1 为原音量（Windows/Linux 映射到百分比） |
 | `minIntervalMs` | `600` | 同类提示音最小间隔 |
 | `audio.done` / `audio.approval` / `audio.question` | `''` | 换成自己的音频，填绝对路径 |
@@ -63,7 +63,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 
 直接覆盖对应目录下的同名文件即可（本地链接安装时立刻生效）：
 
-- 东北话版：`audio/friday-dongbei/`；普通话星期五版：`audio/friday/`；通用版：`audio/`
+- 东北话版：`audio/friday-dongbei/`；普通话星期五版：`audio/friday/`；通用东北话：`audio/dongbei/`；通用：`audio/`
 - macOS / Linux 读 `.mp3`，Windows 读 `.wav`，两处都要换
 
 素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。离线重做：
@@ -77,7 +77,7 @@ ffmpeg -y -i audio/friday-dongbei/done.mp3 -ar 24000 -ac 1 -c:a pcm_s16le audio/
 ## 开发
 
 ```sh
-npm test        # 31 个单元测试，不发声，三平台通用
+npm test        # 32 个单元测试，不发声，三平台通用
 npm run check   # 语法 + 测试
 ```
 

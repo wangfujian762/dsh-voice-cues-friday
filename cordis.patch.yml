@@ -27,7 +27,7 @@
         volume: 1
         # 同类提示音的最小间隔（毫秒），防止连响
         minIntervalMs: 600
-        # 随包语音：friday-dongbei = 东北话（本包默认）、friday = 普通话、default = 通用台词
+        # 随包语音：friday-dongbei = 东北话（本包默认）、friday = 普通话、dongbei = 通用东北话、default = 通用台词
         variant: 'friday-dongbei'
         # 换成自己的音频：填绝对路径，留空则用包内 audio/ 下的文件
         # macOS/Linux 读 .mp3，Windows 读 .wav，换素材时两处都要换

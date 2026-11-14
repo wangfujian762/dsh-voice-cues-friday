@@ -36,7 +36,7 @@ export const DEFAULTS = {
   volume: 1,
   /** Never repeat the same cue faster than this, in milliseconds. */
   minIntervalMs: 600,
-  /** Which shipped set to use: `friday-dongbei` (东北话, default), `friday` (普通话) or `default` (generic). */
+  /** Which shipped set to use: `friday-dongbei` (东北话, default), `friday` (普通话), `dongbei` (generic 东北话) or `default` (generic). */
   variant: 'friday-dongbei',
   /** Per-cue file overrides (absolute path); empty means the shipped files. */
   audio: { done: '', approval: '', question: '' },
@@ -66,7 +66,7 @@ export function normalizeConfig(raw) {
       ? config.turnEndReasons.filter(reason => typeof reason === 'string')
       : DEFAULTS.turnEndReasons,
     includeSubagents: config.includeSubagents === true,
-    variant: ['friday-dongbei', 'friday', 'default'].includes(config.variant) ? config.variant : 'friday-dongbei',
+    variant: ['friday-dongbei', 'friday', 'dongbei', 'default'].includes(config.variant) ? config.variant : 'friday-dongbei',
     volume: typeof config.volume === 'number' && Number.isFinite(config.volume)
       ? Math.min(Math.max(config.volume, 0), 4)
       : DEFAULTS.volume,
