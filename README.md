@@ -1,6 +1,6 @@
 # dsh-voice-cues-friday
 
-回合结束、请求授权、智能体提问时，各放一段短语音提示。**默认使用「星期五」语音包**（星期五任务完成 / 星期五需要你的授权 / 星期五有问题需要你回答）；同一份包里另带通用台词，配置一行即可切换。
+回合结束、请求授权、智能体提问时，各放一段短语音提示。**默认使用「星期五」语音包**（星期五本轮工作完成啦 / 请给星期五授权一下哦 / 告诉星期五你的选择吧）；同一份包里另带通用台词，配置一行即可切换。
 
 由宿主进程播放——页面关掉、窗口最小化、切到别的 App 都照常响。macOS / Windows / Linux 一个包搞定，不需要装额外播放器。
 
@@ -69,7 +69,7 @@ Windows 走 `-EncodedCommand`（UTF-16LE base64）调用，路径里有空格、
 素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。离线重做：
 
 ```sh
-say -v Tingting "星期五任务完成" -o /tmp/done.aiff
+say -v Tingting "星期五本轮工作完成啦" -o /tmp/done.aiff
 ffmpeg -y -i /tmp/done.aiff -codec:a libmp3lame -b:a 48k audio/friday/done.mp3
 ffmpeg -y -i audio/friday/done.mp3 -ar 24000 -ac 1 -c:a pcm_s16le audio/friday/done.wav
 ```
