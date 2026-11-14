@@ -1,6 +1,6 @@
 # 语音提示音 · 星期五（dsh-voice-cues-friday）
 
-把"该你了"变成声音：一轮对话结束、智能体请求授权、智能体向你提问，各放一段短语音提示。默认是**星期五**语音包；同一份包里也带通用台词，`variant: 'default'` 可切换。
+把"该你了"变成声音：一轮对话结束、智能体请求授权、智能体向你提问，各放一段短语音提示。默认是**东北话版星期五**语音包；同一份包里也带普通话星期五与通用台词，`variant: 'friday'` / `'default'` 可切换。
 
 由**宿主进程**播放，页面关掉、窗口最小化、切到别的 App 都照常响。
 
@@ -8,9 +8,9 @@
 
 | 时机 | DSH 事件 | 音频 |
 |---|---|---|
-| 一轮对话结束 | `turn/end`（默认只认 `completed`） | `audio/friday/done` |
-| 智能体请求授权 | `approval/asked` | `audio/friday/permission` |
-| 智能体向你提问 | `tool/call`，工具名 `ask_user_question` | `audio/friday/question` |
+| 一轮对话结束 | `turn/end`（默认只认 `completed`） | `audio/friday-dongbei/done` |
+| 智能体请求授权 | `approval/asked` | `audio/friday-dongbei/permission` |
+| 智能体向你提问 | `tool/call`，工具名 `ask_user_question` | `audio/friday-dongbei/question` |
 
 只有**主会话**的回合结束才播"任务完成"；子代理会话（`origin: subagent`、或 `delegationDepth > 0`）整类静音，完成/授权/提问都不出声。需要时用 `includeSubagents: true` 打开。同类提示音有 600 ms 防连响。
 
@@ -41,14 +41,14 @@ dsh plugin --profile <你的 profile> add github:wangfujian762/dsh-voice-cues-fr
 ```yaml
 - id: voice-cues
   config:
-    variant: 'default'
+    variant: 'friday'
 ```
 
-可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`friday` 星期五 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
+可用键：`enabled`、`onTurnEnd`、`onApproval`、`onQuestion`、`turnEndReasons`、`includeSubagents`、`variant`（`friday-dongbei` 东北话，默认 / `friday` 普通话 / `default` 通用）、`volume`（0–4）、`minIntervalMs`、`audio.done` / `audio.approval` / `audio.question`（绝对路径）。
 
 ## 换台词 / 换音色
 
-覆盖对应目录下的同名文件即可：星期五版在 `audio/friday/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
+覆盖对应目录下的同名文件即可：东北话版在 `audio/friday-dongbei/`，普通话星期五版在 `audio/friday/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
 
 ## 边界
 

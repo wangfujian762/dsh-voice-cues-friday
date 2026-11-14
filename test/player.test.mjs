@@ -54,7 +54,7 @@ test('defaults are on, quiet for subagents, and keep the shipped files', () => {
   assert.deepEqual(config.turnEndReasons, ['completed'])
   assert.equal(config.includeSubagents, false)
   assert.equal(config.volume, 1)
-  assert.equal(config.variant, 'friday')
+  assert.equal(config.variant, 'friday-dongbei')
   assert.deepEqual(config.audio, { done: '', approval: '', question: '' })
   assert.equal(DEFAULTS.minIntervalMs, 600)
 })
@@ -75,8 +75,8 @@ test('false flags stay false instead of being replaced by defaults', () => {
 
 test('cue files default to the package pair and honour an override', () => {
   const defaults = cuePaths('done', normalizeConfig())
-  assert.match(defaults.mp3, /audio[\\/]friday[\\/]done\.mp3$/)
-  assert.match(defaults.wav, /audio[\\/]friday[\\/]done\.wav$/)
+  assert.match(defaults.mp3, /audio[\\/]friday-dongbei[\\/]done\.mp3$/)
+  assert.match(defaults.wav, /audio[\\/]friday-dongbei[\\/]done\.wav$/)
 
   const overridden = cuePaths('approval', normalizeConfig({ audio: { approval: '/custom/line.mp3' } }))
   assert.equal(overridden.mp3, '/custom/line.mp3')
@@ -92,9 +92,15 @@ test('the Friday variant keeps its own folder and an override still wins', () =>
   assert.equal(overridden.mp3, '/x.mp3')
 })
 
-test('an unknown variant falls back to the Friday pack', () => {
+test('an unknown variant falls back to the 东北话 pack', () => {
   const paths = cuePaths('done', normalizeConfig({ variant: 'nope' }))
+  assert.match(paths.mp3, /audio[\\/]friday-dongbei[\\/]done\.mp3$/)
+})
+
+test('the Mandarin Friday pack stays available through variant: friday', () => {
+  const paths = cuePaths('done', normalizeConfig({ variant: 'friday' }))
   assert.match(paths.mp3, /audio[\\/]friday[\\/]done\.mp3$/)
+  assert.doesNotMatch(paths.mp3, /dongbei/)
 })
 
 test('the generic set stays available through variant: default', () => {

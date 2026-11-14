@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "语音提示音 · 星期五",
-    "description": "回合结束、请求授权、提问时播放短语音提示；含“星期五”语音包。macOS / Windows / Linux 通用，由宿主进程播放，关掉页面也照常响。",
+    "description": "回合结束、请求授权、提问时播放短语音提示；含东北话版“星期五”语音包。macOS / Windows / Linux 通用，由宿主进程播放，关掉页面也照常响。",
     "detail": "docs/DETAIL.md"
   }
 }

@@ -1,7 +1,7 @@
 {
   "name": "dsh-voice-cues-friday",
   "version": "1.0.0",
-  "description": "Short spoken cues when a turn finishes, an approval is requested, or the agent asks a question. Ships a “星期五” voice pack. macOS, Windows and Linux. · 回合结束、请求授权、提问时的语音提示音，含“星期五”语音包。",
+  "description": "Short spoken cues when a turn finishes, an approval is requested, or the agent asks a question. Ships a Northeast-Mandarin (dongbei) “星期五” voice pack. macOS, Windows and Linux. · 回合结束、请求授权、提问时的语音提示音，含东北话版“星期五”语音包。",
   "type": "module",
   "license": "MIT",
   "keywords": [
