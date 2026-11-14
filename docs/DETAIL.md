@@ -48,7 +48,7 @@ dsh plugin --profile <你的 profile> add github:wangfujian762/dsh-voice-cues-fr
 
 ## 换台词 / 换音色
 
-覆盖对应目录下的同名文件即可：星期五版在 `audio/friday/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。原素材是 Edge TTS 的 `zh-CN-XiaoxiaoNeural`（24 kHz / 48 kbps 单声道）。
+覆盖对应目录下的同名文件即可：星期五版在 `audio/friday/`，通用版在 `audio/`。macOS/Linux 读 `.mp3`，Windows 读 `.wav`，两者都要换。素材由豆包语音合成 2.0 生成（默认音色 `zh_female_vv_uranus_bigtts`，24 kHz / 64 kbps 单声道）；换成 Edge TTS 也可以，音色 `zh-CN-XiaoxiaoNeural`。
 
 ## 边界
 
