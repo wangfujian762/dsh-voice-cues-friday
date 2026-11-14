@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import z from '@deepseek-ai/schemastery'
 
 export const name = 'dsh-voice-cues-friday'
 
@@ -46,6 +47,56 @@ export const DEFAULTS = {
 
 /** @typedef {ReturnType<typeof normalizeConfig>} CueConfig */
 
+/** Which voice sets this package ships, in the order the settings card lists them. */
+export const VARIANTS = ['friday-dongbei', 'friday', 'personal-dongbei', 'personal', 'dongbei', 'default']
+
+/**
+ * Live-editable settings. The `.volatile()` fields are what the Plugins page
+ * form can change without restarting the plugin; the rest stay in the profile
+ * patch. Volatile values arrive as `Volatile<T>` wrappers and are read through
+ * `unwrap` at the moment a cue plays, so a change applies to the next cue.
+ */
+export const Config = z.object({
+  enabled: z.boolean().default(DEFAULTS.enabled).volatile(),
+  variant: z.union(VARIANTS).default(DEFAULTS.variant).volatile(),
+  onTurnEnd: z.boolean().default(DEFAULTS.onTurnEnd).volatile(),
+  onApproval: z.boolean().default(DEFAULTS.onApproval).volatile(),
+  onQuestion: z.boolean().default(DEFAULTS.onQuestion).volatile(),
+  includeSubagents: z.boolean().default(DEFAULTS.includeSubagents).volatile(),
+  volume: z.number().min(0).max(4).step(0.05).default(DEFAULTS.volume).volatile(),
+  minIntervalMs: z.number().min(0).default(DEFAULTS.minIntervalMs).volatile(),
+  turnEndReasons: z.array(z.string()).default(DEFAULTS.turnEndReasons),
+  audio: z.object({
+    done: z.string().default(''),
+    approval: z.string().default(''),
+    question: z.string().default(''),
+  }).default(DEFAULTS.audio),
+})
+
+const VOLATILE_KEYS = ['enabled', 'variant', 'onTurnEnd', 'onApproval', 'onQuestion', 'includeSubagents', 'volume', 'minIntervalMs']
+
+/** Read a value that may be a schemastery `Volatile` wrapper. */
+export function unwrap(value) {
+  return value !== null && typeof value === 'object' && typeof value.get === 'function' ? value.get() : value
+}
+
+/**
+ * A plain, normalized view of the row config at this instant: volatile fields
+ * are unwrapped, everything else passes through, defaults fill the gaps.
+ * @param {unknown} raw - the loader row config, possibly holding Volatile wrappers.
+ */
+export function readConfig(raw) {
+  const plain = {}
+  if (raw !== null && typeof raw === 'object') {
+    for (const key of VOLATILE_KEYS) {
+      if (raw[key] !== undefined) plain[key] = unwrap(raw[key])
+    }
+    if (raw.turnEndReasons !== undefined) plain.turnEndReasons = raw.turnEndReasons
+    if (raw.audio !== undefined) plain.audio = raw.audio
+  }
+  return normalizeConfig(plain)
+}
+
 /**
  * Merge a loader row's config onto the defaults. A profile override replaces
  * the row's `config` wholesale, so every key has to survive on its own.
@@ -66,7 +117,7 @@ export function normalizeConfig(raw) {
       ? config.turnEndReasons.filter(reason => typeof reason === 'string')
       : DEFAULTS.turnEndReasons,
     includeSubagents: config.includeSubagents === true,
-    variant: ['friday-dongbei', 'friday', 'personal-dongbei', 'personal', 'dongbei', 'default'].includes(config.variant) ? config.variant : 'friday-dongbei',
+    variant: VARIANTS.includes(config.variant) ? config.variant : DEFAULTS.variant,
     volume: typeof config.volume === 'number' && Number.isFinite(config.volume)
       ? Math.min(Math.max(config.volume, 0), 4)
       : DEFAULTS.volume,
@@ -88,10 +139,12 @@ export function normalizeConfig(raw) {
  * @param {CueConfig} config - normalized config.
  * @returns {{ mp3: string, wav: string, override: string }}
  */
+const CUE_FILES = { done: 'done', approval: 'permission', question: 'question' }
+
 export function cuePaths(kind, config) {
   const override = config.audio[kind]
   const base = config.variant === 'default' ? AUDIO_DIR : join(AUDIO_DIR, config.variant)
-  const stem = join(base, kind)
+  const stem = join(base, CUE_FILES[kind] ?? kind)
   return {
     override,
     mp3: override.length > 0 ? override : `${stem}.mp3`,
@@ -236,13 +289,15 @@ export function isSubagentSession(session) {
  * @param {ReturnType<typeof createPlayer>} options.player - cue speaker.
  * @param {(message: string) => void} [options.warn] - diagnostic sink.
  */
-export function createHandler({ config, player, warn = () => {} }) {
+export function createHandler({ config, getConfig, player, warn = () => {} }) {
+  /** Config can be static (tests) or re-read per event (live settings). */
+  const current = () => (getConfig ? getConfig() : config)
   /** @type {Map<CueKind, number>} */
   const lastPlayedAt = new Map()
   /** callIds already sounded, so `tool/call` and PTC dispatch cue once. */
   const seenQuestions = new Set()
 
-  const play = kind => {
+  const play = (kind, config) => {
     const now = Date.now()
     if (now - (lastPlayedAt.get(kind) ?? 0) < config.minIntervalMs) return
     lastPlayedAt.set(kind, now)
@@ -250,18 +305,20 @@ export function createHandler({ config, player, warn = () => {} }) {
   }
 
   return (session, event) => {
+    const config = current()
+    if (!config.enabled) return
     if (!config.includeSubagents && isSubagentSession(session)) return
     switch (event?.type) {
       case 'turn/end': {
         if (!config.onTurnEnd) return
         const reason = typeof event.data?.reason === 'string' ? event.data.reason : event.data?.reason?.kind
         if (typeof reason === 'string' && !config.turnEndReasons.includes(reason)) return
-        play('done')
+        play('done', config)
         return
       }
       case 'approval/asked': {
         if (!config.onApproval) return
-        play('approval')
+        play('approval', config)
         return
       }
       case 'tool/call':
@@ -273,12 +330,81 @@ export function createHandler({ config, player, warn = () => {} }) {
           seenQuestions.add(callId)
           if (seenQuestions.size > 500) seenQuestions.clear()
         }
-        play('question')
+        play('question', config)
         return
       }
       default:
         return
     }
+  }
+}
+
+/** Request bodies are tiny JSON objects; anything larger is refused. */
+function readBody(req, limit = 4096) {
+  return new Promise((resolve, reject) => {
+    let size = 0
+    const chunks = []
+    req.on('data', chunk => {
+      size += chunk.length
+      if (size > limit) {
+        reject(new Error('body too large'))
+        req.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+    req.on('error', reject)
+  })
+}
+
+/**
+ * `POST /voice-cues/preview` — plays one cue for the settings card. Same-origin
+ * only: a request carrying an `Origin` header must match the page's host, so a
+ * random site cannot use the route to make noise.
+ * @param {object} options - wiring.
+ * @param {() => CueConfig} options.getConfig - current config reader.
+ * @param {ReturnType<typeof createPlayer>} options.player - cue speaker.
+ * @param {(message: string) => void} [options.warn] - diagnostic sink.
+ */
+export function createPreviewHandler({ getConfig, player, warn = () => {} }) {
+  return async (req, res) => {
+    const respond = (status, body) => {
+      res.statusCode = status
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify(body))
+    }
+    if (req.method !== 'POST') return respond(405, { ok: false, error: 'method-not-allowed' })
+    const origin = req.headers?.origin
+    if (typeof origin === 'string' && origin.length > 0) {
+      let sameOrigin = false
+      try {
+        sameOrigin = new URL(origin).host === req.headers?.host
+      } catch {
+        sameOrigin = false
+      }
+      if (!sameOrigin) return respond(403, { ok: false, error: 'cross-origin' })
+    }
+
+    let payload
+    try {
+      payload = JSON.parse(await readBody(req))
+    } catch {
+      return respond(400, { ok: false, error: 'bad-json' })
+    }
+    const kind = payload?.kind
+    if (!['done', 'approval', 'question'].includes(kind)) {
+      return respond(400, { ok: false, error: 'bad-kind' })
+    }
+    const config = getConfig()
+    const variant = VARIANTS.includes(payload?.variant) ? payload.variant : config.variant
+    try {
+      player.play(kind, { ...config, variant }, cuePaths(kind, { ...config, variant }))
+    } catch (error) {
+      warn(`preview failed: ${error?.message ?? String(error)}`)
+      return respond(500, { ok: false, error: 'playback-failed' })
+    }
+    return respond(200, { ok: true, variant, kind })
   }
 }
 
@@ -288,12 +414,22 @@ export function createHandler({ config, player, warn = () => {} }) {
  * @param {object} [overrides] - injection points for tests.
  */
 export function apply(ctx, rawConfig, overrides = {}) {
-  const config = normalizeConfig(rawConfig)
-  if (!config.enabled) return
-
   const warn = message => ctx.logger?.warn?.(`dsh-voice-cues: ${message}`)
   const player = createPlayer({ warn, ...overrides.player })
-  const handler = createHandler({ config, player, warn })
+  // The subscription is always live: `enabled` is a volatile setting, so a
+  // later toggle must take effect without a restart and is checked per event.
+  const handler = createHandler({ getConfig: () => readConfig(rawConfig), player, warn })
+
+  ctx.inject(['webServer'], webCtx => {
+    webCtx.effect(
+      () => webCtx.webServer.register({
+        kind: 'exact',
+        path: '/voice-cues/preview',
+        handler: createPreviewHandler({ getConfig: () => readConfig(rawConfig), player, warn }),
+      }),
+      'dsh-voice-cues: preview route',
+    )
+  })
 
   ctx.effect(
     () => {

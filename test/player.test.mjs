@@ -9,13 +9,17 @@ import { test } from 'node:test'
 
 import {
   apply,
+  Config,
   createHandler,
+  createPreviewHandler,
   createPlayer,
   cuePaths,
   DEFAULTS,
   isSubagentSession,
   normalizeConfig,
+  readConfig,
   spawnSpecs,
+  unwrap,
 } from '../index.js'
 
 const MP3 = '/tmp/cues/done.mp3'
@@ -320,6 +324,7 @@ test('apply subscribes to the session feed and stops the player on disposal', ()
   let disposed = false
   const ctx = {
     logger: { warn() {} },
+    inject() {},
     effect(fn) {
       const off = fn()
       return off
@@ -335,13 +340,102 @@ test('apply subscribes to the session feed and stops the player on disposal', ()
   assert.equal(disposed, false)
 })
 
-test('a disabled plugin subscribes to nothing', () => {
+test('a disabled plugin still subscribes, so the toggle works live', () => {
   const listeners = []
   const ctx = {
     logger: { warn() {} },
+    inject() {},
     effect(fn) { fn() },
     on(event, fn) { listeners.push({ event, fn }) },
   }
   apply(ctx, { enabled: false })
-  assert.deepEqual(listeners, [])
+  assert.equal(listeners.length, 1)
+  assert.equal(listeners[0].event, 'session/event')
+})
+
+test('the approval cue reads permission.mp3, not approval.mp3', () => {
+  assert.match(cuePaths('approval', normalizeConfig()).mp3, /permission\.mp3$/)
+  assert.match(cuePaths('approval', normalizeConfig({ variant: 'friday-dongbei' })).wav, /friday-dongbei[\\/]permission\.wav$/)
+  assert.match(cuePaths('done', normalizeConfig()).mp3, /done\.mp3$/)
+  assert.match(cuePaths('question', normalizeConfig()).mp3, /question\.mp3$/)
+})
+
+test('readConfig unwraps volatile settings and keeps plain ones', () => {
+  const config = readConfig({
+    variant: { get: () => 'friday' },
+    volume: { get: () => 0.5 },
+    onQuestion: { get: () => false },
+    turnEndReasons: ['completed', 'error'],
+  })
+  assert.equal(config.variant, 'friday')
+  assert.equal(config.volume, 0.5)
+  assert.equal(config.onQuestion, false)
+  assert.deepEqual(config.turnEndReasons, ['completed', 'error'])
+})
+
+test('the Config schema exposes the settings card fields', () => {
+  const sample = Config({})
+  assert.equal(unwrap(sample.variant), DEFAULTS.variant)
+  assert.equal(unwrap(sample.volume), DEFAULTS.volume)
+})
+
+test('a handler with a live getter picks up a changed variant', () => {
+  const played = []
+  let variant = 'friday-dongbei'
+  const base = normalizeConfig()
+  const player = { play(kind, cfg) { played.push(cfg.variant) }, stop() {} }
+  const handler = createHandler({ getConfig: () => ({ ...base, variant }), player })
+  const session = { header: { origin: 'user' } }
+  handler(session, { type: 'turn/end', data: { reason: { kind: 'completed' } } })
+  variant = 'friday'
+  handler(session, { type: 'approval/asked', data: {} })
+  assert.deepEqual(played, ['friday-dongbei', 'friday'])
+})
+
+function fakeRequest({ method = 'POST', headers = {}, body = '' }) {
+  const req = new EventEmitter()
+  req.method = method
+  req.headers = headers
+  process.nextTick(() => {
+    if (body) req.emit('data', Buffer.from(body))
+    req.emit('end')
+  })
+  return req
+}
+
+function fakeResponse() {
+  return {
+    statusCode: 0,
+    headers: {},
+    body: '',
+    setHeader(key, value) { this.headers[key] = value },
+    end(body) { this.body = body },
+  }
+}
+
+test('the preview route plays the requested cue and variant', async () => {
+  const played = []
+  const player = { play(kind, cfg) { played.push([kind, cfg.variant]) }, stop() {} }
+  const handler = createPreviewHandler({ getConfig: () => normalizeConfig({ variant: 'friday' }), player })
+  const res = fakeResponse()
+  await handler(fakeRequest({ body: JSON.stringify({ kind: 'approval', variant: 'personal-dongbei' }) }), res)
+  assert.equal(res.statusCode, 200)
+  assert.deepEqual(played, [['approval', 'personal-dongbei']])
+})
+
+test('the preview route refuses other methods, kinds and origins', async () => {
+  const player = { play() {}, stop() {} }
+  const handler = createPreviewHandler({ getConfig: () => normalizeConfig(), player })
+  const wrongMethod = fakeResponse()
+  await handler(fakeRequest({ method: 'GET' }), wrongMethod)
+  assert.equal(wrongMethod.statusCode, 405)
+  const wrongKind = fakeResponse()
+  await handler(fakeRequest({ body: JSON.stringify({ kind: 'launch' }) }), wrongKind)
+  assert.equal(wrongKind.statusCode, 400)
+  const crossOrigin = fakeResponse()
+  await handler(fakeRequest({
+    headers: { origin: 'http://evil.example', host: '127.0.0.1:62542' },
+    body: JSON.stringify({ kind: 'done' }),
+  }), crossOrigin)
+  assert.equal(crossOrigin.statusCode, 403)
 })

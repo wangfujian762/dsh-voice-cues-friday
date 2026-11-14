@@ -16,6 +16,7 @@
   ],
   "exports": {
     ".": "./index.js",
+    "./client": "./client.js",
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
@@ -26,7 +27,8 @@
     "docs",
     "icon.svg",
     "audio",
-    "LICENSE"
+    "LICENSE",
+    "client.js"
   ],
   "scripts": {
     "test": "node --test",
@@ -42,11 +44,24 @@
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
     }
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wangfujian762/dsh-voice-cues-friday.git"
   },
-  "homepage": "https://github.com/wangfujian762/dsh-voice-cues-friday"
+  "homepage": "https://github.com/wangfujian762/dsh-voice-cues-friday",
+  "peerDependencies": {
+    "@deepseek-ai/schemastery": "^3.18.1"
+  },
+  "devDependencies": {
+    "@deepseek-ai/schemastery": "^3.19.0"
+  }
 }
