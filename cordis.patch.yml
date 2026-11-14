@@ -1,0 +1,37 @@
+# dsh-voice-cues 装配补丁：安装到 profile 时插入这一条 loader entry。
+#
+# 想改配置时，在你自己的 profile 的 cordis.patch.yml 里写一条同 id 的覆盖：
+#
+#   - id: voice-cues
+#     config:
+#       onTurnEnd: false
+#
+# 注意：覆盖会整体替换下面这份 config，不会深合并——没写的键由插件内的默认值
+# （index.js 的 DEFAULTS）补齐，所以只写要改的键就够了。
+- insert:
+    - id: voice-cues
+      name: 'dsh-voice-cues-friday'
+      config:
+        enabled: true
+        # 一轮对话正常结束时放 done
+        onTurnEnd: true
+        # 智能体请求授权（approval/asked）时放 permission
+        onApproval: true
+        # 智能体提问（ask_user_question）时放 question
+        onQuestion: true
+        # 只有这些 turn/end 原因会响；可加 'error' / 'aborted' / 'max-tokens' 等
+        turnEndReasons: ['completed']
+        # 子代理会话默认不响（它们结束得太频繁）
+        includeSubagents: false
+        # 音量增益，1 = 音频原音量（0–4；Windows/Linux 映射到百分比）
+        volume: 1
+        # 同类提示音的最小间隔（毫秒），防止连响
+        minIntervalMs: 600
+        # 随包的两套语音：friday = 星期五版（本包默认），default = 通用台词
+        variant: 'friday'
+        # 换成自己的音频：填绝对路径，留空则用包内 audio/ 下的文件
+        # macOS/Linux 读 .mp3，Windows 读 .wav，换素材时两处都要换
+        audio:
+          done: ''
+          approval: ''
+          question: ''

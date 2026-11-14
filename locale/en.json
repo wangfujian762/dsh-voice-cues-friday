@@ -1,0 +1,7 @@
+{
+  "meta": {
+    "title": "Voice cues · Friday",
+    "description": "Plays a short spoken cue when a turn finishes, an approval is requested, or the agent asks a question. Ships a “Friday” voice pack. macOS, Windows and Linux; the host process plays it.",
+    "detail": "docs/DETAIL.md"
+  }
+}
